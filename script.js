@@ -22,3 +22,19 @@ if ("geolocation" in navigator) {
       .addTo(map);
   });
 }
+map.on('load', () => {
+  map.addSource('routes', {
+    type: 'geojson',
+    data: 'grafton_routes.geojson'
+  });
+
+  map.addLayer({
+    id: 'route-lines',
+    type: 'line',
+    source: 'routes',
+    paint: {
+      'line-color': '#ff0000',
+      'line-width': 2
+    }
+  });
+});
