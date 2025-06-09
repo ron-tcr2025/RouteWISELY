@@ -1,0 +1,257 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Institute Road",
+        "segment_id": "IN001_S1",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.688,
+            42.2122
+          ],
+          [
+            -71.687,
+            42.2118
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Institute Road",
+        "segment_id": "IN001_S2",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.687,
+            42.2118
+          ],
+          [
+            -71.686,
+            42.2114
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Institute Road",
+        "segment_id": "IN001_S3",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.686,
+            42.2114
+          ],
+          [
+            -71.685,
+            42.211
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "East Street",
+        "segment_id": "ES002_S1",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.682,
+            42.215
+          ],
+          [
+            -71.681,
+            42.2145
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "East Street",
+        "segment_id": "ES002_S2",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.681,
+            42.2145
+          ],
+          [
+            -71.68,
+            42.214
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "East Street",
+        "segment_id": "ES002_S3",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.68,
+            42.214
+          ],
+          [
+            -71.679,
+            42.2135
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Waterville Street",
+        "segment_id": "WV003_S1",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.693,
+            42.2158
+          ],
+          [
+            -71.692,
+            42.2155
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Waterville Street",
+        "segment_id": "WV003_S2",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.692,
+            42.2155
+          ],
+          [
+            -71.691,
+            42.2152
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Waterville Street",
+        "segment_id": "WV003_S3",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.691,
+            42.2152
+          ],
+          [
+            -71.69,
+            42.2149
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Westboro Road",
+        "segment_id": "WB004_S1",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.6845,
+            42.2128
+          ],
+          [
+            -71.6835,
+            42.2124
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Westboro Road",
+        "segment_id": "WB004_S2",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.6835,
+            42.2124
+          ],
+          [
+            -71.6825,
+            42.212
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Westboro Road",
+        "segment_id": "WB004_S3",
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.6825,
+            42.212
+          ],
+          [
+            -71.6815,
+            42.2116
+          ]
+        ]
+      }
+    }
+  ]
+}
