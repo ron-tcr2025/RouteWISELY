@@ -1,0 +1,93 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Centech Blvd",
+        "segment_id": "CT001",
+        "length": 520.4,
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.6901,
+            42.2123
+          ],
+          [
+            -71.6885,
+            42.212
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Pine Street",
+        "segment_id": "PN002",
+        "length": 610.2,
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.683,
+            42.215
+          ],
+          [
+            -71.6812,
+            42.2145
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "Institute Road",
+        "segment_id": "IN003",
+        "length": 430.8,
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.6874,
+            42.2102
+          ],
+          [
+            -71.6859,
+            42.2098
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "road_name": "East Street",
+        "segment_id": "ES004",
+        "length": 705.1,
+        "status": "unvisited"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -71.6775,
+            42.2135
+          ],
+          [
+            -71.6756,
+            42.2131
+          ]
+        ]
+      }
+    }
+  ]
+}
