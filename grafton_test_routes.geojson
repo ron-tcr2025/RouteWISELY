@@ -6,7 +6,7 @@
       "properties": {
         "road_name": "Institute Road",
         "segment_id": "IN001",
-        "length": 500,
+        "length": 10500,
         "status": "unvisited"
       },
       "geometry": {
@@ -28,7 +28,7 @@
       "properties": {
         "road_name": "East Street",
         "segment_id": "ES002",
-        "length": 650,
+        "length": 10650,
         "status": "unvisited"
       },
       "geometry": {
