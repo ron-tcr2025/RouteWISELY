@@ -10,7 +10,7 @@ const map = new mapboxgl.Map({
 let tracking = false, paused = false;
 
 map.on('load', () => {
-  map.addSource('routes', { type: 'geojson', data: 'grafton_sample_routes.geojson' });
+  map.addSource('routes', { type: 'geojson', data: 'grafton_test_routes.geojson' });
   map.addLayer({
     id: 'route-lines',
     type: 'line',
