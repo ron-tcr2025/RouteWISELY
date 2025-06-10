@@ -28,7 +28,7 @@ This project will be built on a modern, scalable technology stack designed for r
 * **Mobile App (iOS/Android):** Flutter via FlutterFlow
 * **Web Dashboard:** React.js
 * **Backend Framework:** Cloud Functions for Firebase using Node.js or Python
-* **Main Database:** Cloud SQL (PostgreSQL) with PostGIS extension
+* **Main Database:** Cloud Firestore & Cloud SQL (PostgreSQL) with PostGIS extension
 * **File & Data Syncing:** Google Cloud Storage and Firebase Cloud Firestore
 * **User Authentication:** Firebase Authentication
 * **Mapping & Navigation:** Google Maps Platform (SDKs, Directions API)
