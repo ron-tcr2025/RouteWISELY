@@ -53,3 +53,26 @@ git clone [https://github.com/your-org/RouteWISELY.git](https://github.com/your-
 cd RouteWISELY
 
 # (Instructions for backend, web, and mobile setup will be added here)
+
+
+## 📍 RouteWISELY Maps Integration
+
+This repository contains integration code and documentation for using the Google Maps API in RouteWISELY.
+
+### Codebook
+👉 See [`RouteWISELY_Maps_Codebook.md`](RouteWISELY_Maps_Codebook.md) for:
+- Web and mobile (Flutter) Google Maps integration patterns
+- API usage examples
+- Common pitfalls and gotchas
+- Upload and Git instructions
+
+### Sample Stubs
+- [`map.html`](map.html) — Basic Google Maps web integration example
+- [`map.dart`](map.dart) — Basic Google Maps Flutter widget
+
+---
+
+## 📝 Notes
+Ensure API keys are secured using environment variables or a secrets manager.  
+- Test location features on real devices and various network conditions.  
+- Review API billing and quota settings in Google Cloud Console.
