@@ -1,5 +1,3 @@
-// map_v6.dart - RouteWISELY Enhanced Map (Missoula, MT)
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -21,29 +19,32 @@ class _RouteWiselyMapState extends State<RouteWiselyMap> {
   StreamSubscription<LocationData>? _locationSubscription;
   Polyline? _routePolyline;
 
-  // YOUR API KEYS
+  // API KEYS
   final String mapsApiKey = 'AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk';
-  final String androidApiKey = 'AIzaSyDni3iauyeKWBIbWh6k4_WkTTj88SaVJL8';
-  final String iosApiKey = 'AIzaSyAJcNzOYDjXKvvSOikEOa-Ef0E3tBqROdA';
-  final String browserApiKey = 'AIzaSyCuLNAse57yDh4XJ5dNVdseGvG8lSENv1A';
+
+  // Route segment tracking
+  List<LatLng> _routeSegments = [
+    LatLng(46.8721, -113.9940),
+    LatLng(46.8731, -113.9930),
+    LatLng(46.8741, -113.9920)
+  ];
+  Set<LatLng> _visitedSegments = {};
 
   @override
   void initState() {
     super.initState();
-    _markers.add(
-      Marker(
-        markerId: MarkerId("start"),
-        position: _startLocation,
-        infoWindow: InfoWindow(title: "Start Location"),
-      ),
-    );
+    FirebaseFirestore.instance.settings = Settings(persistenceEnabled: true);
+    _markers.add(Marker(
+      markerId: MarkerId("start"),
+      position: _startLocation,
+      infoWindow: InfoWindow(title: "Start Location"),
+    ));
     _startTracking();
     _fetchDirections();
   }
 
   void _startTracking() async {
-    _locationSubscription =
-        _locationTracker.onLocationChanged.listen((LocationData currentLocation) {
+    _locationSubscription = _locationTracker.onLocationChanged.listen((LocationData currentLocation) {
       LatLng pos = LatLng(currentLocation.latitude ?? 0.0, currentLocation.longitude ?? 0.0);
 
       if (_controller != null) {
@@ -51,16 +52,13 @@ class _RouteWiselyMapState extends State<RouteWiselyMap> {
       }
 
       setState(() {
-        _markers.add(
-          Marker(
-            markerId: MarkerId("current"),
-            position: pos,
-            infoWindow: InfoWindow(title: "Current Location"),
-          ),
-        );
+        _markers.add(Marker(
+          markerId: MarkerId("current"),
+          position: pos,
+          infoWindow: InfoWindow(title: "Current Location"),
+        ));
       });
 
-      // Save to Firestore
       FirebaseFirestore.instance.collection('driver_tracking').add({
         'timestamp': FieldValue.serverTimestamp(),
         'latitude': currentLocation.latitude,
@@ -68,6 +66,8 @@ class _RouteWiselyMapState extends State<RouteWiselyMap> {
         'accuracy': currentLocation.accuracy,
         'speed': currentLocation.speed,
       });
+
+      _checkRouteCompletion(pos);
     });
   }
 
@@ -123,6 +123,34 @@ class _RouteWiselyMapState extends State<RouteWiselyMap> {
     }
 
     return points;
+  }
+
+  void _checkRouteCompletion(LatLng currentPos) {
+    for (var segment in _routeSegments) {
+      if (_distanceBetween(segment, currentPos) < 0.0001) {
+        _visitedSegments.add(segment);
+      }
+    }
+
+    if (_visitedSegments.length == _routeSegments.length) {
+      print("✅ Route completed!");
+      FirebaseFirestore.instance.collection('driver_tracking').add({
+        'event': 'route_completed',
+        'timestamp': FieldValue.serverTimestamp()
+      });
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Route Complete"),
+          content: Text("All segments have been visited."),
+        ),
+      );
+    }
+  }
+
+  double _distanceBetween(LatLng a, LatLng b) {
+    return (a.latitude - b.latitude).abs() + (a.longitude - b.longitude).abs();
   }
 
   @override
