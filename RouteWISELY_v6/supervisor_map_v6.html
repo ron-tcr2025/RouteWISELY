@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>RouteWISELY Supervisor Dashboard</title>
+  <title>RouteWISELY Supervisor Dashboard V6</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
@@ -14,14 +14,20 @@
       margin: 0;
       padding: 0;
     }
-    #download {
+    #controls {
       position: absolute;
       top: 10px;
       left: 10px;
       z-index: 5;
-      background: white;
-      padding: 5px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
       border: 1px solid #ccc;
+      font-family: sans-serif;
+    }
+    #progress {
+      margin-top: 5px;
+      font-weight: bold;
+      color: #333;
     }
   </style>
   <!-- Firebase -->
@@ -29,59 +35,112 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <button id="download">Download GPS Data (CSV)</button>
+  <div id="controls">
+    <button id="download">Download GPS Data (CSV)</button>
+    <div id="progress">Progress: 0% | ETA: --</div>
+  </div>
   <div id="map"></div>
 
   <script>
-    // Initialize Firebase
+    // ✅ REPLACE THESE VALUES with your actual Firebase project info
     const firebaseConfig = {
-      apiKey: "AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk",
-      authDomain: "your-project.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "your-messaging-sender-id",
-      appId: "your-app-id"
+      apiKey: "AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk",  // (Maps Platform API key)
+      authDomain: "routewisely-project.firebaseapp.com",      // find in Firebase Console > Project Settings
+      projectId: "routewisely-project",                      // find in Firebase Console > Project Settings
+      storageBucket: "routewisely-project.firebasestorage.app",      // find in Firebase Console > Project Settings
+      messagingSenderId: "110068907650",               // find in Firebase Console > Project Settings
+      appId: "1:110068907650:web:f4f643cbe22657bc52be9b"      // find in Firebase Console > Project Settings
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Initialize map
     let map;
     let markers = [];
+    let polylines = [];
+    let startTime = null;
+    const totalSegments = 100;  // ✅ Set this to our total expected segments (replace dynamically later)
+
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
         zoom: 14,
         center: { lat: 46.8721, lng: -113.9940 } // Missoula, MT
       });
+
+      loadGeoJsonOverlay();
       listenForUpdates();
     }
 
-    // Listen to Firestore and update map
+    function loadGeoJsonOverlay() {
+      // ✅ Replace URL with actual GeoJSON public URL (e.g. Firebase Storage or Cloud-hosted)
+      map.data.loadGeoJson('https://YOUR_DOMAIN.com/path/to/roads.geojson');
+      map.data.setStyle({
+        strokeColor: '#FF0000',
+        strokeWeight: 2
+      });
+    }
+
     function listenForUpdates() {
       db.collection("driver_tracking").orderBy("timestamp")
         .onSnapshot(snapshot => {
-          clearMarkers();
+          clearMap();
+          let pathCoords = [];
+          let firstPointTime = null;
+
           snapshot.forEach(doc => {
             const data = doc.data();
             if (data.latitude && data.longitude) {
               const pos = { lat: data.latitude, lng: data.longitude };
+              pathCoords.push(pos);
+
               const marker = new google.maps.Marker({
                 position: pos,
                 map: map,
                 title: `Speed: ${data.speed || 0}`
               });
               markers.push(marker);
+
+              if (!firstPointTime && data.timestamp) {
+                firstPointTime = data.timestamp.toDate();
+              }
             }
           });
+
+          if (pathCoords.length > 1) {
+            const polyline = new google.maps.Polyline({
+              path: pathCoords,
+              geodesic: true,
+              strokeColor: '#00FF00',
+              strokeOpacity: 1.0,
+              strokeWeight: 2
+            });
+            polyline.setMap(map);
+            polylines.push(polyline);
+          }
+
+          // Dynamic % completion
+          const percent = Math.min(100, Math.round((pathCoords.length / totalSegments) * 100));
+          document.getElementById("progress").innerText = `Progress: ${percent}% | ETA: ${calculateETA(firstPointTime, percent)}`;
         });
     }
 
-    function clearMarkers() {
-      markers.forEach(marker => marker.setMap(null));
-      markers = [];
+    function calculateETA(firstPointTime, percentComplete) {
+      if (!firstPointTime || percentComplete === 0) return '--';
+      const now = new Date();
+      const elapsedMs = now - firstPointTime;
+      const estimatedTotalMs = elapsedMs / (percentComplete / 100);
+      const etaMs = estimatedTotalMs - elapsedMs;
+      const etaDate = new Date(now.getTime() + etaMs);
+      return etaDate.toLocaleTimeString();
     }
 
-    // Download GPS data as CSV
+    function clearMap() {
+      markers.forEach(marker => marker.setMap(null));
+      polylines.forEach(polyline => polyline.setMap(null));
+      markers = [];
+      polylines = [];
+    }
+
     document.getElementById("download").addEventListener("click", () => {
       db.collection("driver_tracking").get().then(snapshot => {
         let csv = "timestamp,latitude,longitude,speed,accuracy\n";
