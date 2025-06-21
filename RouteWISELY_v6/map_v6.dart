@@ -2,7 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:location/location.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RouteWiselyMap extends StatefulWidget {
   @override
@@ -11,68 +15,129 @@ class RouteWiselyMap extends StatefulWidget {
 
 class _RouteWiselyMapState extends State<RouteWiselyMap> {
   GoogleMapController? _controller;
+  final LatLng _startLocation = LatLng(46.8721, -113.9940); // Missoula, MT
+  Set<Marker> _markers = {};
+  Location _locationTracker = Location();
+  StreamSubscription<LocationData>? _locationSubscription;
+  Polyline? _routePolyline;
 
-  // Missoula, MT as default center
-  static const LatLng _startLocation = LatLng(46.8721, -113.9940);
-
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
+  // YOUR API KEYS
+  final String mapsApiKey = 'AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk';
+  final String androidApiKey = 'AIzaSyDni3iauyeKWBIbWh6k4_WkTTj88SaVJL8';
+  final String iosApiKey = 'AIzaSyAJcNzOYDjXKvvSOikEOa-Ef0E3tBqROdA';
+  final String browserApiKey = 'AIzaSyCuLNAse57yDh4XJ5dNVdseGvG8lSENv1A';
 
   @override
   void initState() {
     super.initState();
-    _initializeMapElements();
-  }
-
-  void _initializeMapElements() {
-    // Add starting marker
     _markers.add(
       Marker(
-        markerId: MarkerId('start'),
+        markerId: MarkerId("start"),
         position: _startLocation,
-        infoWindow: InfoWindow(title: 'Start Location'),
+        infoWindow: InfoWindow(title: "Start Location"),
       ),
     );
-
-    // Example polyline (can be generated from API or Firestore)
-    _polylines.add(
-      Polyline(
-        polylineId: PolylineId('route1'),
-        points: [
-          _startLocation,
-          LatLng(46.8731, -113.9930),
-          LatLng(46.8741, -113.9920),
-        ],
-        color: Colors.blue,
-        width: 5,
-      ),
-    );
+    _startTracking();
+    _fetchDirections();
   }
 
-  void _updateDriverPosition(LatLng position) {
-    setState(() {
-      _markers.removeWhere((m) => m.markerId.value == 'driver');
-      _markers.add(
-        Marker(
-          markerId: MarkerId('driver'),
-          position: position,
-          infoWindow: InfoWindow(title: 'Driver Position'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        ),
-      );
+  void _startTracking() async {
+    _locationSubscription =
+        _locationTracker.onLocationChanged.listen((LocationData currentLocation) {
+      LatLng pos = LatLng(currentLocation.latitude ?? 0.0, currentLocation.longitude ?? 0.0);
+
+      if (_controller != null) {
+        _controller!.animateCamera(CameraUpdate.newLatLng(pos));
+      }
+
+      setState(() {
+        _markers.add(
+          Marker(
+            markerId: MarkerId("current"),
+            position: pos,
+            infoWindow: InfoWindow(title: "Current Location"),
+          ),
+        );
+      });
+
+      // Save to Firestore
+      FirebaseFirestore.instance.collection('driver_tracking').add({
+        'timestamp': FieldValue.serverTimestamp(),
+        'latitude': currentLocation.latitude,
+        'longitude': currentLocation.longitude,
+        'accuracy': currentLocation.accuracy,
+        'speed': currentLocation.speed,
+      });
     });
   }
 
-  Future<void> _syncWithFirestore() async {
-    // TODO: fetch route + driver data from Firestore
+  void _fetchDirections() async {
+    String url =
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${_startLocation.latitude},${_startLocation.longitude}&destination=${_startLocation.latitude},${_startLocation.longitude}&key=$mapsApiKey';
+
+    var response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+      var points = data['routes'][0]['overview_polyline']['points'];
+      var line = _decodePolyline(points);
+
+      setState(() {
+        _routePolyline = Polyline(
+          polylineId: PolylineId("route"),
+          points: line,
+          color: Colors.blue,
+          width: 4,
+        );
+      });
+    } else {
+      print("Error fetching directions: ${response.body}");
+    }
   }
 
-  Future<void> _fetchDirections() async {
-    // TODO: implement Google Directions API call + polyline decoding
+  List<LatLng> _decodePolyline(String encoded) {
+    List<LatLng> points = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      points.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+
+    return points;
+  }
+
+  @override
+  void dispose() {
+    _locationSubscription?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    Set<Polyline> polylines = {};
+    if (_routePolyline != null) {
+      polylines.add(_routePolyline!);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('RouteWISELY Map'),
@@ -80,21 +145,14 @@ class _RouteWiselyMapState extends State<RouteWiselyMap> {
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: _startLocation,
-          zoom: 14,
+          zoom: 14.0,
         ),
-        onMapCreated: (controller) {
-          _controller = controller;
-        },
         markers: _markers,
-        polylines: _polylines,
+        polylines: polylines,
         myLocationEnabled: true,
         compassEnabled: true,
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.location_searching),
-        onPressed: () {
-          // Example dynamic update
-          _updateDriverPosition(LatLng(46.8735, -113.9935));
+        onMapCreated: (controller) {
+          _controller = controller;
         },
       ),
     );
