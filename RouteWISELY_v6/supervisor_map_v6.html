@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RouteWISELY Supervisor Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #download {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 5;
+      background: white;
+      padding: 5px;
+      border: 1px solid #ccc;
+    }
+  </style>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <button id="download">Download GPS Data (CSV)</button>
+  <div id="map"></div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "your-messaging-sender-id",
+      appId: "your-app-id"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Initialize map
+    let map;
+    let markers = [];
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 14,
+        center: { lat: 46.8721, lng: -113.9940 } // Missoula, MT
+      });
+      listenForUpdates();
+    }
+
+    // Listen to Firestore and update map
+    function listenForUpdates() {
+      db.collection("driver_tracking").orderBy("timestamp")
+        .onSnapshot(snapshot => {
+          clearMarkers();
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.latitude && data.longitude) {
+              const pos = { lat: data.latitude, lng: data.longitude };
+              const marker = new google.maps.Marker({
+                position: pos,
+                map: map,
+                title: `Speed: ${data.speed || 0}`
+              });
+              markers.push(marker);
+            }
+          });
+        });
+    }
+
+    function clearMarkers() {
+      markers.forEach(marker => marker.setMap(null));
+      markers = [];
+    }
+
+    // Download GPS data as CSV
+    document.getElementById("download").addEventListener("click", () => {
+      db.collection("driver_tracking").get().then(snapshot => {
+        let csv = "timestamp,latitude,longitude,speed,accuracy\n";
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          csv += `${d.timestamp ? d.timestamp.toDate().toISOString() : ""},${d.latitude},${d.longitude},${d.speed || ""},${d.accuracy || ""}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "gps_data.csv";
+        a.click();
+      });
+    });
+  </script>
+
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk&callback=initMap">
+  </script>
+</body>
+</html>
