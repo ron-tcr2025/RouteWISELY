@@ -121,3 +121,62 @@ The `supervisor_map_v6.html` provides supervisors with a live dashboard to monit
     }
   }
 }
+# RouteWISELY - Municipal Route Optimization Application (V6)
+
+**Version:** 6.0 (MVP)  
+**Status:** Milestone 1 – Discovery, Design, Build  
+
+---
+
+## 📌 Overview  
+
+RouteWISELY is a mobile + web app for municipal public works teams to manage, optimize, and monitor driver routes (e.g. road maintenance, inspections).  
+This version (V6) integrates:  
+
+✅ Google Maps for navigation + overlays  
+✅ Firestore + Firebase Auth  
+✅ Supervisor web dashboard (with login)  
+✅ Live GPS tracking with route progress % + ETA  
+✅ Route completion detection  
+✅ Offline sync helpers (Firestore persistence)  
+✅ CSV data export  
+✅ Chart.js mini-dashboard  
+
+---
+
+## ⚙️ Core Features  
+
+### Driver (Mobile - Flutter / FF)  
+- Turn-by-turn nav (Google Maps Directions API)  
+- Real-time GPS + route tracking  
+- Auto-record GPS points (Firestore: `driver_tracking`)  
+
+### Supervisor (Web - `supervisor_map_v6.html`)  
+- Secure login (Firebase Auth)  
+- Live map with driver positions + routes  
+- GeoJSON overlay (road network)  
+- Progress % + ETA  
+- Completion alert (fires at 100%)  
+- Downloadable CSV of trip points  
+- Offline caching with Firestore persistence  
+- Auto-retry Firestore listener on errors  
+- Chart.js bar graph for completion %  
+
+---
+
+## 🔑 API + Config  
+
+| Purpose | API Key |
+|----------|---------|
+| Maps Platform | `AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk` |
+
+**Firebase Config:**  
+```json
+{
+  "apiKey": "AIzaSyA4bVqER9jyPDHRJ4NMCsbFMFQtWDzcSQk",
+  "authDomain": "routewisely-project.firebaseapp.com",
+  "projectId": "routewisely-project",
+  "storageBucket": "routewisely-project.appspot.com",
+  "messagingSenderId": "110068907650",
+  "appId": "1:110068907650:web:f4f643cbe22657bc52be9b"
+}
