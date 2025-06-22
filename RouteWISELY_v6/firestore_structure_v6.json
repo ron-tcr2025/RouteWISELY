@@ -1,1 +1,20 @@
-{ "example": "firestore_structure_v6" }
+# RouteWISELY V6 - Firestore Structure Guide
+
+📌 This document defines the Firestore collections, document formats, indexes, and access patterns for RouteWISELY V6.
+
+---
+
+## 🚗 `driver_tracking` Collection
+
+### Purpose:
+Stores GPS point data captured during driver routes.
+
+### Example Document:
+```json
+{
+  "latitude": 46.8721,
+  "longitude": -113.9940,
+  "speed": 10.5,
+  "accuracy": 5.0,
+  "timestamp": "2025-06-19T15:45:00Z"
+}
