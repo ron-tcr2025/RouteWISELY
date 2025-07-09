@@ -1,38 +1,32 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>RouteWISELY - Missoula Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RouteWISELY Missoula v1</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha512-sA+e2GPhhZcJYekBjQTu7pZ1skNreOa7DC0x9D9Nv9bcyQ+py0cOS2Yq+OUz4Fh2lOjL1UWWX9jOekLbWz6GiQ=="
+    crossorigin=""
+  />
   <style>
-    html, body {
+    html, body, #map {
       height: 100%;
       margin: 0;
     }
-    #map {
-      height: 100%;
-      width: 100%;
-    }
-    .leaflet-control-custom {
-      background: white;
+    .leaflet-control-locate {
+      background-color: white;
+      border: 2px solid #555;
       border-radius: 4px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.3);
-      font-size: 18px;
-      line-height: 26px;
-      padding: 4px 8px;
-      text-align: center;
+      padding: 6px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
-
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
