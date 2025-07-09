@@ -1,48 +1,67 @@
-// Initialize map
-const map = L.map('map').setView([46.870, -113.995], 13);
+// Initialize the map
+const map = L.map('map').setView([46.87, -113.99], 13); // Default Missoula center
 
-// Add OpenStreetMap base layer
+// Add OpenStreetMap tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors',
-  maxZoom: 19
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Load RouteWISELY GeoJSON from GCP
-const geojsonURL = "https://storage.googleapis.com/tcr_munis/missoula_v1.geojson";
-
-fetch(geojsonURL)
-  .then(response => {
-    if (!response.ok) throw new Error("Failed to load GeoJSON");
-    return response.json();
-  })
+// Fetch GeoJSON from GCP and render with red dots
+fetch("https://storage.googleapis.com/tcr_munis/missoula_v1.geojson")
+  .then(response => response.json())
   .then(data => {
-    // Add GeoJSON to the map
-    const geoLayer = L.geoJSON(data, {
+    L.geoJSON(data, {
       pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, {
           radius: 4,
-          fillColor: "#00cc44",
-          color: "#006622",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 0.8
+          color: "#ff0000",     // red border
+          fillColor: "#ff0000", // red fill
+          fillOpacity: 0.8,
+          weight: 1
         });
-      },
-      onEachFeature: function (feature, layer) {
-        const props = feature.properties;
-        const popupContent = `
-          <strong>Segment ID:</strong> ${props.segment_id}<br/>
-          <strong>Sequence:</strong> ${props.sequence_id}<br/>
-          <strong>Bearing From:</strong> ${props.bearing_from}<br/>
-          <strong>Bearing To:</strong> ${props.bearing_to}
-        `;
-        layer.bindPopup(popupContent);
       }
     }).addTo(map);
-
-    map.fitBounds(geoLayer.getBounds()); // Zoom to fit features
   })
-  .catch(err => {
-    console.error("GeoJSON load failed:", err);
-    alert("Failed to load route data. Check console for details.");
+  .catch(error => {
+    console.error("Error loading GeoJSON:", error);
   });
+
+// Try to locate the user at start
+map.locate({ setView: true, maxZoom: 17 });
+
+map.on('locationfound', function (e) {
+  const latlng = [e.latitude, e.longitude];
+
+  // Add "You are here" marker
+  L.marker(latlng).addTo(map)
+    .bindPopup("You are here")
+    .openPopup();
+
+  // Track visited points
+  L.circleMarker(latlng, {
+    radius: 3,
+    color: "#00ff00",
+    fillColor: "#00ff00",
+    fillOpacity: 0.6
+  }).addTo(map);
+});
+
+// Manual "📍" button to re-center on driver
+const locateBtn = L.control({ position: 'topright' });
+locateBtn.onAdd = function(map) {
+  const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+  div.innerHTML = '📍';
+  div.title = "Center on driver";
+  div.style.cursor = 'pointer';
+  div.onclick = function () {
+    map.locate({ setView: true, maxZoom: 17 });
+  };
+  return div;
+};
+locateBtn.addTo(map);
+
+// Optional: Log error if location fails
+map.on('locationerror', function (e) {
+  alert("Location access denied or unavailable.");
+});
