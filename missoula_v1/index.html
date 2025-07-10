@@ -18,12 +18,12 @@
     html, body, #map {
       height: 100%;
       margin: 0;
+      padding: 0;
     }
-    .leaflet-control-locate {
-      background-color: white;
-      border: 2px solid #555;
-      border-radius: 4px;
-      padding: 6px;
+    #map {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1;
     }
     #loadingIndicator {
       position: absolute;
@@ -31,10 +31,10 @@
       left: 50%;
       transform: translate(-50%, 0);
       z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      padding: 10px 20px;
+      background: rgba(255,255,255,0.97);
+      padding: 12px 22px;
       border-radius: 6px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
       font-weight: 600;
       display: none;
     }
@@ -70,6 +70,19 @@
     #resetBtn:hover {
       background: #b80000;
     }
+    .leaflet-control-locate {
+      background-color: white;
+      border: 2px solid #555;
+      border-radius: 4px;
+      padding: 6px;
+    }
+    .legend {
+      font-size: 0.95rem;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.93);
+      padding: 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    }
   </style>
 </head>
 <body>
@@ -80,229 +93,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <script>
-    const GEOJSON_URL = "https://storage.googleapis.com/tcr_munis/missoula_v1.geojson";
-    const VISITED_KEY = "visitedStops-missoula-v1";
-    let geoLayer, markerCluster, allStops = [], userMarker = null, nextStop = null, map;
-    let visitedStops = new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || "[]"));
-    let locateControl;
-
-    // UI elements
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const nextStopInfo = document.getElementById('nextStopInfo');
-    const resetBtn = document.getElementById('resetBtn');
-
-    // Show and hide loading indicator
-    function showLoading(msg="Loading...") {
-      loadingIndicator.style.display = "";
-      loadingIndicator.textContent = msg;
-    }
-    function hideLoading() {
-      loadingIndicator.style.display = "none";
-    }
-
-    // Initialize the map
-    map = L.map('map').setView([46.87, -113.99], 13);
-
-    // Add OSM tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map);
-
-    // Add Locate control
-    locateControl = L.control.locate({
-      setView: 'always',
-      flyTo: true,
-      initialZoomLevel: 16,
-      drawCircle: true, // show accuracy
-      keepCurrentZoomLevel: false,
-      showPopup: false,
-      strings: {
-        title: "Center map on your location"
-      }
-    }).addTo(map);
-
-    locateControl.start();
-
-    // Marker cluster for performance
-    markerCluster = L.markerClusterGroup({
-      showCoverageOnHover: false,
-      maxClusterRadius: 40,
-      disableClusteringAtZoom: 17
-    });
-
-    // Helper: Save visited stops
-    function saveVisited() {
-      localStorage.setItem(VISITED_KEY, JSON.stringify(Array.from(visitedStops)));
-    }
-
-    // Helper: Reset visited stops
-    resetBtn.onclick = function() {
-      if (confirm("Reset all visited stops?")) {
-        visitedStops.clear();
-        saveVisited();
-        allStops.forEach(marker => marker.setStyle(getMarkerStyle(marker.feature, false)));
-        updateNextStop();
-      }
-    };
-
-    // Helper: Distance between two latlngs (meters)
-    function distanceMeters(a, b) {
-      return map.distance([a.lat, a.lng], [b.lat, b.lng]);
-    }
-
-    // Helper: Marker style
-    function getMarkerStyle(feature, visited, highlight=false) {
-      if(highlight) {
-        return {
-          radius: 8, color: "#0074d9", fillColor: "#fff", fillOpacity: 1, weight: 3
-        };
-      }
-      if(visited) {
-        return { radius: 5, color: "green", fillColor: "#0c0", fillOpacity: 0.9, weight: 1 };
-      }
-      return { radius: 5, color: "red", fillColor: "#f03", fillOpacity: 0.8, weight: 1 };
-    }
-
-    // Helper: Find next unvisited stop (nearest)
-    function findNextStop(userLatLng) {
-      let minDist = Infinity, closest = null;
-      allStops.forEach(marker => {
-        if (visitedStops.has(marker.feature.id)) return;
-        let dist = distanceMeters(userLatLng, marker.getLatLng());
-        if (dist < minDist) {
-          minDist = dist;
-          closest = marker;
-        }
-      });
-      return {marker: closest, distance: minDist};
-    }
-
-    // Helper: update info about next stop
-    function updateNextStop(userLatLng) {
-      let info = "All stops visited!";
-      if (userLatLng && allStops.length) {
-        let {marker, distance} = findNextStop(userLatLng);
-        if (marker) {
-          nextStop = marker;
-          // Style highlight
-          allStops.forEach(m => m.setStyle(getMarkerStyle(m.feature, visitedStops.has(m.feature.id))));
-          marker.setStyle(getMarkerStyle(marker.feature, false, true));
-          info = `Next stop: <b>${marker.feature.properties.name || marker.feature.id}</b> (${distance.toFixed(0)} m)`;
-        } else {
-          nextStop = null;
-        }
-      }
-      nextStopInfo.innerHTML = info;
-    }
-
-    // Helper: Visit stop if user is near
-    function checkProximity(userLatLng) {
-      if (!nextStop) return;
-      let dist = distanceMeters(userLatLng, nextStop.getLatLng());
-      if (dist < 25 && !visitedStops.has(nextStop.feature.id)) { // within 25m
-        visitedStops.add(nextStop.feature.id);
-        nextStop.setStyle(getMarkerStyle(nextStop.feature, true));
-        saveVisited();
-        updateNextStop(userLatLng);
-      }
-    }
-
-    // Draw arrow to next stop
-    let arrowLine = null;
-    function updateArrow(userLatLng) {
-      if (arrowLine) map.removeLayer(arrowLine);
-      if (nextStop && userLatLng) {
-        arrowLine = L.polyline(
-          [userLatLng, nextStop.getLatLng()],
-          {color: "#0074d9", dashArray: "6,8", weight: 2}
-        ).addTo(map);
-      }
-    }
-
-    // Load and render GeoJSON points
-    showLoading("Loading route data (43MB)...");
-    fetch(GEOJSON_URL)
-      .then(res => res.json())
-      .then(data => {
-        // Assign unique IDs if not present
-        let idCounter = 0;
-        geoLayer = L.geoJSON(data, {
-          pointToLayer: function(feature, latlng) {
-            feature.id = feature.id || (feature.properties.id || ("stop-" + (idCounter++)));
-            let visited = visitedStops.has(feature.id);
-            let marker = L.circleMarker(latlng, getMarkerStyle(feature, visited));
-            marker.feature = feature;
-            marker.on("click", function() {
-              if (!visitedStops.has(feature.id)) {
-                visitedStops.add(feature.id);
-                marker.setStyle(getMarkerStyle(feature, true));
-                saveVisited();
-                updateNextStop(userMarker ? userMarker.getLatLng() : null);
-              }
-            });
-            allStops.push(marker);
-            return marker;
-          }
-        });
-        markerCluster.addLayer(geoLayer);
-        map.addLayer(markerCluster);
-        hideLoading();
-      })
-      .catch(error => {
-        showLoading("Failed to load route data.");
-        console.error(error);
-      });
-
-    // Handle user location updates
-    function onLocationFound(e) {
-      let latlng = e.latlng;
-      // Center user marker
-      if (!userMarker) {
-        userMarker = L.circleMarker(latlng, {
-          radius: 7, color: "#333", fillColor: "#00f", fillOpacity: 0.8
-        }).addTo(map);
-      } else {
-        userMarker.setLatLng(latlng);
-      }
-      updateNextStop(latlng);
-      updateArrow(latlng);
-      checkProximity(latlng);
-    }
-    map.on('locationfound', onLocationFound);
-
-    // Optionally, auto-locate every X seconds for live guidance
-    setInterval(() => locateControl.start(), 8000);
-
-    // Initial guidance text
-    nextStopInfo.innerHTML = "Finding your next stop... Stand by.";
-
-    // Optional: Add a legend
-    L.control({position: 'bottomright'}).onAdd = function() {
-      const div = L.DomUtil.create('div', 'info legend');
-      div.innerHTML = `
-      <strong>Legend</strong><br>
-      <span style="display:inline-block;width:12px;height:12px;background:#f03;border-radius:50%;border:1px solid red;"></span> Unvisited<br>
-      <span style="display:inline-block;width:12px;height:12px;background:#0c0;border-radius:50%;border:1px solid green;"></span> Visited<br>
-      <span style="display:inline-block;width:12px;height:12px;background:#fff;border-radius:50%;border:2px solid #0074d9;"></span> Next Stop<br>
-      <span style="display:inline-block;width:18px;height:4px;background:#0074d9;margin-bottom:2px;"></span> Next Stop Arrow
-      `;
-      div.style.background = "rgba(255,255,255,0.93)";
-      div.style.padding = "8px 12px";
-      div.style.borderRadius = "6px";
-      div.style.boxShadow = "0 2px 8px rgba(0,0,0,0.14)";
-      return div;
-    }.addTo(map);
-
-    // Feature Suggestions (not implemented, ideas for you):
-    // - Offline support for route data (cache last loaded data)
-    // - Export visited stops as CSV
-    // - Allow driver to set "start" and "end" stops
-    // - ETA/time estimation to next stop
-    // - Show stops as a route line (polyline) if ordering is important
-    // - Voice guidance for drivers (Web Speech API)
-    // - Backend sync for visited stops (if login exists)
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
