@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoJSON Fetch Test</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { width: 100vw; height: 70vh; min-height: 300px; margin: 0 auto; margin-top: 20px; border-radius: 12px; }
+    body { font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <h2>GeoJSON Fetch Test</h2>
+  <div id="map"></div>
+  <div id="status"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // 1. Init map (Missoula area)
+    var map = L.map('map').setView([47.6, -113.7], 10);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18
+    }).addTo(map);
+
+    // 2. GeoJSON fetch & display
+    var status = document.getElementById('status');
+    fetch('https://storage.googleapis.com/tcr_munis/missoula_v1.geojson')
+      .then(res => {
+        if (!res.ok) throw new Error("Network error " + res.status);
+        return res.json();
+      })
+      .then(data => {
+        status.textContent = "GeoJSON loaded successfully! Features: " + (data.features ? data.features.length : 0);
+        // Add GeoJSON layer
+        L.geoJSON(data).addTo(map);
+      })
+      .catch(err => {
+        status.textContent = "GeoJSON fetch failed: " + err;
+      });
+  </script>
+</body>
+</html>
