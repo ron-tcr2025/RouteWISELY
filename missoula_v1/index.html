@@ -90,6 +90,11 @@
       padding: 8px 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.14);
     }
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 6px 0 8px 0;
+    }
   </style>
 </head>
 <body>
@@ -102,18 +107,21 @@
     <span id="logStart"></span><br>
     <span id="logCurrent"></span><br>
     <span id="logElapsed"></span>
+    <hr>
+    <b>Visited Markers:</b> <span id="visitedCount"></span>
+    <div id="visitedList" style="font-size:0.9em;"></div>
+    <b>Missed Markers:</b> <span id="missedCount"></span>
+    <div id="missedList" style="font-size:0.9em; color:#b80000;"></div>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="app.js"></script>
   <script>
-    // Driver logging integration with app.js
-    // These fields will be updated by app.js (or you can use below as a template to integrate)
+    // Driver logging for multi-day tracking
     let logStart = document.getElementById('logStart');
     let logCurrent = document.getElementById('logCurrent');
     let logElapsed = document.getElementById('logElapsed');
-    // Initialize driver log
     let driverStart = localStorage.getItem("driverStart") || null;
     if (!driverStart) {
       driverStart = new Date().toISOString();
@@ -135,16 +143,20 @@
         String(secs).padStart(2, "0");
       logElapsed.textContent = "Elapsed: " + elapsedStr;
     }
-    // Update every 10 seconds
     updateDriverLog();
     setInterval(updateDriverLog, 10000);
 
-    // Optionally, when Reset is clicked, reset the log
-    document.getElementById('resetBtn').addEventListener('click', function() {
+    // Allow app.js to reset log
+    window.driverLogReset = function() {
       localStorage.removeItem("driverStart");
       driverStart = new Date().toISOString();
       localStorage.setItem("driverStart", driverStart);
       updateDriverLog();
+    };
+
+    // On Reset button, also reset driver log
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      if (window.driverLogReset) window.driverLogReset();
     });
   </script>
 </body>
