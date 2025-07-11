@@ -70,11 +70,18 @@
     #resetBtn:hover {
       background: #b80000;
     }
-    .leaflet-control-locate {
-      background-color: white;
-      border: 2px solid #555;
-      border-radius: 4px;
-      padding: 6px;
+    #driverLog {
+      position: absolute;
+      top: 60px;
+      right: 15px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.97);
+      padding: 10px 18px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      font-size: 0.97rem;
+      min-width: 220px;
+      max-width: 260px;
     }
     .legend {
       font-size: 0.95rem;
@@ -90,9 +97,55 @@
   <button id="resetBtn" title="Reset visited stops">Reset Stops</button>
   <div id="map"></div>
   <div id="nextStopInfo">Finding your next stop...</div>
+  <div id="driverLog">
+    <b>Driver Log</b><br>
+    <span id="logStart"></span><br>
+    <span id="logCurrent"></span><br>
+    <span id="logElapsed"></span>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Driver logging integration with app.js
+    // These fields will be updated by app.js (or you can use below as a template to integrate)
+    let logStart = document.getElementById('logStart');
+    let logCurrent = document.getElementById('logCurrent');
+    let logElapsed = document.getElementById('logElapsed');
+    // Initialize driver log
+    let driverStart = localStorage.getItem("driverStart") || null;
+    if (!driverStart) {
+      driverStart = new Date().toISOString();
+      localStorage.setItem("driverStart", driverStart);
+    }
+    function updateDriverLog() {
+      const now = new Date();
+      logStart.textContent = "Start: " + new Date(driverStart).toLocaleString();
+      logCurrent.textContent = "Current: " + now.toLocaleString();
+      // Calculate elapsed time (HH:MM:SS, even if over days)
+      let elapsedMs = now - new Date(driverStart);
+      let days = Math.floor(elapsedMs / (24*60*60*1000));
+      let hours = Math.floor((elapsedMs % (24*60*60*1000)) / (60*60*1000));
+      let mins = Math.floor((elapsedMs % (60*60*1000)) / (60*1000));
+      let secs = Math.floor((elapsedMs % (60*1000)) / 1000);
+      let elapsedStr = (days ? days + "d " : "") + 
+        String(hours).padStart(2, "0") + ":" +
+        String(mins).padStart(2, "0") + ":" +
+        String(secs).padStart(2, "0");
+      logElapsed.textContent = "Elapsed: " + elapsedStr;
+    }
+    // Update every 10 seconds
+    updateDriverLog();
+    setInterval(updateDriverLog, 10000);
+
+    // Optionally, when Reset is clicked, reset the log
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      localStorage.removeItem("driverStart");
+      driverStart = new Date().toISOString();
+      localStorage.setItem("driverStart", driverStart);
+      updateDriverLog();
+    });
+  </script>
 </body>
 </html>
