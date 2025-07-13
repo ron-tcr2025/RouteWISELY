@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RouteWISELY Missoula v1</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha512-sA+e2GPhhZcJYekBjQTu7pZ1skNreOa7DC0x9D9Nv9bcyQ+py0cOS2Yq+OUz4Fh2lOjL1UWWX9jOekLbWz6GiQ=="
+    crossorigin=""
+  />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+  />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1;
+    }
+    #loadingIndicator {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translate(-50%, 0);
+      z-index: 1000;
+      background: rgba(255,255,255,0.97);
+      padding: 12px 22px;
+      border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      font-weight: 600;
+      display: none;
+    }
+    #nextStopInfo {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translate(-50%, 0);
+      background: rgba(255,255,255,0.97);
+      padding: 12px 22px;
+      border-radius: 5px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      font-size: 1rem;
+      z-index: 1000;
+      min-width: 220px;
+      text-align: center;
+    }
+    #resetBtn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 1000;
+      background: #f03;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      transition: background 0.2s;
+    }
+    #resetBtn:hover {
+      background: #b80000;
+    }
+    #driverLog {
+      position: absolute;
+      top: 60px;
+      right: 15px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.97);
+      padding: 10px 18px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      font-size: 0.97rem;
+      min-width: 220px;
+      max-width: 260px;
+    }
+    .legend {
+      font-size: 0.95rem;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.93);
+      padding: 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 6px 0 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="loadingIndicator">Loading route data...</div>
+  <button id="resetBtn" title="Reset visited stops">Reset Stops</button>
+  <div id="map"></div>
+  <div id="nextStopInfo">Finding your next stop...</div>
+  <div id="driverLog">
+    <b>Driver Log</b><br>
+    <span id="logStart"></span><br>
+    <span id="logCurrent"></span><br>
+    <span id="logElapsed"></span>
+    <hr>
+    <b>Visited Markers:</b> <span id="visitedCount"></span>
+    <div id="visitedList" style="font-size:0.9em;"></div>
+    <b>Missed Markers:</b> <span id="missedCount"></span>
+    <div id="missedList" style="font-size:0.9em; color:#b80000;"></div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.locatecontrol@0.78.0/dist/L.Control.Locate.min.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Driver logging for multi-day tracking
+    let logStart = document.getElementById('logStart');
+    let logCurrent = document.getElementById('logCurrent');
+    let logElapsed = document.getElementById('logElapsed');
+    let driverStart = localStorage.getItem("driverStart") || null;
+    if (!driverStart) {
+      driverStart = new Date().toISOString();
+      localStorage.setItem("driverStart", driverStart);
+    }
+    function updateDriverLog() {
+      const now = new Date();
+      logStart.textContent = "Start: " + new Date(driverStart).toLocaleString();
+      logCurrent.textContent = "Current: " + now.toLocaleString();
+      // Calculate elapsed time (HH:MM:SS, even if over days)
+      let elapsedMs = now - new Date(driverStart);
+      let days = Math.floor(elapsedMs / (24*60*60*1000));
+      let hours = Math.floor((elapsedMs % (24*60*60*1000)) / (60*60*1000));
+      let mins = Math.floor((elapsedMs % (60*60*1000)) / (60*1000));
+      let secs = Math.floor((elapsedMs % (60*1000)) / 1000);
+      let elapsedStr = (days ? days + "d " : "") + 
+        String(hours).padStart(2, "0") + ":" +
+        String(mins).padStart(2, "0") + ":" +
+        String(secs).padStart(2, "0");
+      logElapsed.textContent = "Elapsed: " + elapsedStr;
+    }
+    updateDriverLog();
+    setInterval(updateDriverLog, 10000);
+
+    // Allow app.js to reset log
+    window.driverLogReset = function() {
+      localStorage.removeItem("driverStart");
+      driverStart = new Date().toISOString();
+      localStorage.setItem("driverStart", driverStart);
+      updateDriverLog();
+    };
+
+    // On Reset button, also reset driver log
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      if (window.driverLogReset) window.driverLogReset();
+    });
+  </script>
+</body>
+</html>
