@@ -9,7 +9,12 @@ const PROXIMITY_RADIUS = 50; // meters for forgiving GPS/lane drift
 const BEHIND_ANGLE_THRESHOLD = 110; // degrees, for "passed" markers
 const MISSED_ANGLE_THRESHOLD = 150; // for missed marker logic
 
-let map = L.map('map').setView([46.87, -113.99], 13);
+let map = L.map('map', {
+  zoomControl: true,
+  attributionControl: true,
+  tap: true // Improves mobile support
+}).setView([46.87, -113.99], 13);
+
 let geoLayer, markerCluster, allStops = [], userMarker = null, nextStop = null;
 let visitedStops = new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || "[]"));
 let missedStops = new Set(JSON.parse(localStorage.getItem(MISSED_KEY) || "[]"));
@@ -50,19 +55,19 @@ function angleDifference(a, b) {
 // Marker styling logic
 function getMarkerStyle(feature, visited, isNext = false, isCurrent = false, isMissed = false) {
   if (isMissed) {
-    return { radius: 6, color: "#b80000", fillColor: "#ffb3b3", fillOpacity: 0.7, weight: 2 };
+    return { radius: 7, color: "#b80000", fillColor: "#ffb3b3", fillOpacity: 0.8, weight: 2 };
   }
   if (isCurrent) {
-    return { radius: 8, color: "#0054b9", fillColor: "#3fbbfe", fillOpacity: 1, weight: 3 };
+    return { radius: 9, color: "#0054b9", fillColor: "#3fbbfe", fillOpacity: 1, weight: 3 };
   }
   if (isNext) {
-    return { radius: 8, color: "#0074d9", fillColor: "#fff", fillOpacity: 1, weight: 3 };
+    return { radius: 9, color: "#0074d9", fillColor: "#fff", fillOpacity: 1, weight: 3 };
   }
   if (visited) {
-    return { radius: 5, color: "green", fillColor: "#0c0", fillOpacity: 0.9, weight: 1 };
+    return { radius: 6, color: "green", fillColor: "#0c0", fillOpacity: 0.9, weight: 2 };
   }
   // Not visited
-  return { radius: 5, color: "red", fillColor: "#f03", fillOpacity: 0.8, weight: 1 };
+  return { radius: 6, color: "red", fillColor: "#f03", fillOpacity: 0.85, weight: 2 };
 }
 
 // UI overlays
@@ -125,7 +130,7 @@ function updateArrow(userLatLng) {
   if (nextStop && userLatLng) {
     arrowLine = L.polyline(
       [userLatLng, nextStop.getLatLng()],
-      { color: "#0074d9", dashArray: "6,8", weight: 2 }
+      { color: "#0074d9", dashArray: "6,8", weight: 3 }
     ).addTo(map);
   }
 }
@@ -199,10 +204,13 @@ markerCluster = L.markerClusterGroup({
   disableClusteringAtZoom: 17
 });
 
-// Load and render GeoJSON points
-showLoading("Loading route data (43MB)...");
+// Load and render GeoJSON points (with robust error messaging for mobile)
+showLoading("Loading route data (43MB)... Please wait. Large files may take time to load on mobile.");
 fetch(GEOJSON_URL)
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("GeoJSON fetch failed: " + res.statusText);
+    return res.json();
+  })
   .then(data => {
     let idCounter = 0;
     geoLayer = L.geoJSON(data, {
@@ -212,7 +220,8 @@ fetch(GEOJSON_URL)
         let missed = missedStops.has(feature.id);
         let marker = L.circleMarker(latlng, getMarkerStyle(feature, visited, false, false, missed));
         marker.feature = feature;
-        marker.on("click", function() {
+        // On mobile, use touchstart for marker selection
+        marker.on("click touchstart", function() {
           if (!visitedStops.has(feature.id) && !missedStops.has(feature.id)) {
             visitedStops.add(feature.id);
             saveVisited();
@@ -229,7 +238,7 @@ fetch(GEOJSON_URL)
     updateVisitedMissedLog();
   })
   .catch(error => {
-    showLoading("Failed to load route data.");
+    showLoading("Failed to load route data. Please check your connection or try again later.");
     console.error(error);
   });
 
@@ -293,7 +302,6 @@ L.control({ position: 'bottomright' }).onAdd = function () {
 }.addTo(map);
 
 // -- Driver log timestamp integration for multi-day tracking --
-// This code is expected in index.html, but you can expose a reset handler here:
 window.driverLogReset = function() {
   localStorage.removeItem("driverStart");
   let driverStart = new Date().toISOString();
