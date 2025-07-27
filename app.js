@@ -12,7 +12,7 @@ const MISSED_ANGLE_THRESHOLD = 150; // for missed marker logic
 let map = L.map('map', {
   zoomControl: true,
   attributionControl: true,
-  tap: true // Improves mobile support
+  tap: true // Better mobile support
 }).setView([46.87, -113.99], 13);
 
 let geoLayer, markerCluster, allStops = [], userMarker = null, nextStop = null;
@@ -174,9 +174,9 @@ function updateVisitedMissedLog() {
   let missedCount = document.getElementById("missedCount");
   let missedList = document.getElementById("missedList");
   if (visitedCount) visitedCount.textContent = visitedArr.length;
-  if (visitedList) visitedList.textContent = visitedArr.slice(0,10).join(", ") + (visitedArr.length > 10 ? "..." : "");
+  if (visitedList) visitedList.textContent = visitedArr.slice(0, 10).join(", ") + (visitedArr.length > 10 ? "..." : "");
   if (missedCount) missedCount.textContent = missedArr.length;
-  if (missedList) missedList.textContent = missedArr.slice(0,10).join(", ") + (missedArr.length > 10 ? "..." : "");
+  if (missedList) missedList.textContent = missedArr.slice(0, 10).join(", ") + (missedArr.length > 10 ? "..." : "");
 }
 
 // Add OSM tiles
@@ -214,14 +214,14 @@ fetch(GEOJSON_URL)
   .then(data => {
     let idCounter = 0;
     geoLayer = L.geoJSON(data, {
-      pointToLayer: function(feature, latlng) {
+      pointToLayer: function (feature, latlng) {
         feature.id = feature.id || (feature.properties.id || ("stop-" + (idCounter++)));
         let visited = visitedStops.has(feature.id);
         let missed = missedStops.has(feature.id);
         let marker = L.circleMarker(latlng, getMarkerStyle(feature, visited, false, false, missed));
         marker.feature = feature;
         // On mobile, use touchstart for marker selection
-        marker.on("click touchstart", function() {
+        marker.on("click touchstart", function () {
           if (!visitedStops.has(feature.id) && !missedStops.has(feature.id)) {
             visitedStops.add(feature.id);
             saveVisited();
@@ -302,7 +302,7 @@ L.control({ position: 'bottomright' }).onAdd = function () {
 }.addTo(map);
 
 // -- Driver log timestamp integration for multi-day tracking --
-window.driverLogReset = function() {
+window.driverLogReset = function () {
   localStorage.removeItem("driverStart");
   let driverStart = new Date().toISOString();
   localStorage.setItem("driverStart", driverStart);
